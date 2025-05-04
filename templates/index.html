@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Price History Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #17153B, #2E236C, #433D8B, #C8ACD6);
+        text-align: center;
+        padding: 50px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      .splash-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #17153B;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-size: 24px;
+        z-index: 9999;
+        animation: fadeOut 2s ease-out forwards;
+        animation-delay: 2s;
+      }
+
+      .splash-title {
+        font-size: 48px;
+        font-weight: bold;
+        color: #C8ACD6;
+      }
+
+      .splash-subtitle {
+        font-size: 24px;
+        color: #C8ACD6;
+      }
+
+      @keyframes fadeOut {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+      h1 {
+        font-size: 52px;
+        font-weight: bold;
+        color: #C8ACD6;
+        margin-bottom: 5px;
+      }
+
+      h3 {
+        font-size: 26px;
+        color: #C8ACD6;
+        margin-bottom: 20px;
+      }
+      .container {
+        margin: 10px;
+        width: 90%;
+        max-width: 900px;
+        background: #433D8B;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .input-container {
+        background: #2E236C;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .input-container h2 {
+        color: #C8ACD6;
+        margin-bottom: 15px;
+      }
+
+      input[type="text"] {
+        width: 85%;
+        padding: 12px;
+        margin-bottom: 10px;
+        border: 1px solid #C8ACD6;
+        border-radius: 5px;
+        font-size: 16px;
+        outline: none;
+      }
+
+      button {
+        background: #C8ACD6;
+        color: white;
+        padding: 12px 18px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      button:hover {
+        background: #a78bbf;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #2E236C;
+        color: white;
+      }
+
+      th, td {
+        padding: 12px;
+        border: 1px solid #C8ACD6;
+        text-align: center;
+      }
+
+      th {
+        background: #C8ACD6;
+        color: #17153B;
+        font-weight: bold;
+      }
+
+      tr:nth-child(even) {
+        background: #433D8B;
+      }
+
+      #chart-container {
+        height: 300px;
+        margin-top: 20px;
+        padding: 20px;
+        background: #2E236C;
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="splash-screen">
+      <div class="splash-title">TagTrack</div>
+      <div class="splash-subtitle">Prices and Info at a Glance</div>
+    </div>
+    <div class="title-container">
+        <h1>TagTrack</h1>
+        <h3>Prices and Info at a Glance</h3>
+      </div>
+    <div class="input-container">
+      <h2>Enter Product URL</h2>
+      <p>Track the latest price trends and predictions for your product.</p>
+      <form method="POST">
+        <input type="text" name="amazon_link" placeholder="Enter Product Link" required />
+        <button type="submit">Check Price History</button>
+      </form>
+    </div>
+
+    {% if supporting_text %}
+    <div class="container">
+      <h2>Why Should You Buy This?</h2>
+      <ul>
+        {% for text in supporting_text %}
+        <li>{{ text }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if product_details %}
+    <div class="container">
+      <h2>Product Details</h2>
+      <h4>Current Price: ₹{{ price_history[-1].y }}</h4>
+      <img src="{{ product_image }}" style="max-width: 200px; border-radius: 8px" alt="Product Image" />
+      <div>{{ product_details | safe }}</div>
+    </div>
+    {% endif %}
+
+    {% if table_html %}
+    <div class="container">
+        <h2>Predicted Prices for Next 30 Days</h2>
+        <table>
+            {{ table_html | safe }}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if price_history %}
+    <div class="container">
+      <h2>Price History</h2>
+      <p>Highest Price: ₹{{ max_price }} | Lowest Price: ₹{{ min_price }}</p>
+      <div id="chart-container">
+        <canvas id="priceChart"></canvas>
+      </div>
+    </div>
+
+    <script>
+      const ctx = document.getElementById('priceChart').getContext('2d');
+      const labels = {{ price_history | tojson | safe }}.map(entry => entry.x);
+      const data = {{ price_history | tojson | safe }}.map(entry => entry.y);
+      new Chart(ctx, {
+          type: 'line',
+          data: {
+              labels: labels,
+              datasets: [{
+                  label: 'Price Over Time',
+                  data: data,
+                  borderColor: '#C8ACD6',
+                  backgroundColor: 'rgba(200, 172, 214, 0.2)',
+                  borderWidth: 2,
+                  fill: true
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                  x: { ticks: { color: '#FFFFFF' }, title: { display: true, text: 'Date & Time', color: '#FFFFFF' } },
+                  y: { ticks: { color: '#FFFFFF' }, title: { display: true, text: 'Price (₹)', color: '#FFFFFF' }, beginAtZero: false }
+              }
+          }
+      });
+    </script>
+    {% endif %}
+  </body>
+</html>
