@@ -50,54 +50,34 @@ def get_price_history(amazon_link):
     return history, product_details, product_image, supporting_text, table_html
 
 def predict_future_prices(price_history, periods=30):
-    """
-    Predict future prices using Facebook's Prophet.
-    
-    :param price_history: List of dictionaries with 'x' as timestamp and 'y' as price.
-    :param periods: Number of future days to predict.
-    :return: DataFrame containing future price predictions.
-    """
     df = pd.DataFrame(price_history)
     df.rename(columns={'x': 'ds', 'y': 'y'}, inplace=True)
     df['ds'] = pd.to_datetime(df['ds'])
     
-    # Initialize and fit Prophet model
     model = Prophet()
     model.fit(df)
     
-    # Create future dataframe
     future = model.make_future_dataframe(periods=periods)
-    
-    # Predict future values
     forecast = model.predict(future)
     
     return forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
 
-
-
-
-def prepare_and_render(price_history, min_price, max_price, product_details, product_image, supporting_text, forecast_df):
-    # Convert 'ds' column to datetime if it's not already
+def prepare_and_render(price_history, min_price, max_price, current_price, product_details, product_image, supporting_text, forecast_df):
     table_html = None
     if forecast_df is not None:
         forecast_df["ds"] = pd.to_datetime(forecast_df["ds"])
-
-        # Filter for future dates
         today = datetime.now()
         future_forecast = forecast_df[forecast_df["ds"] >= today]
-
-        # Select only the required columns
         filtered_forecast = future_forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
-
-        # Rename columns for clarity
         filtered_forecast = filtered_forecast.rename(columns={
             "ds": "Date",
             "yhat": "Predicted Price",
             "yhat_lower": "Lower Confidence",
             "yhat_upper": "Upper Confidence"
         })
-
-        # Convert the filtered DataFrame to HTML
+        price_columns = ["Predicted Price", "Lower Confidence", "Upper Confidence"]
+        filtered_forecast[price_columns] = filtered_forecast[price_columns].round(0).astype(int)
+        filtered_forecast["Date"] = filtered_forecast["Date"].dt.strftime("%b %d, %Y")
         table_html = filtered_forecast.to_html(classes="table table-striped", index=False)
 
     return render_template(
@@ -105,24 +85,23 @@ def prepare_and_render(price_history, min_price, max_price, product_details, pro
         price_history=price_history,
         min_price=min_price,
         max_price=max_price,
+        current_price=current_price,
         product_details=product_details,
         product_image=product_image,
         supporting_text=supporting_text,
         table_html=table_html
     )
 
-
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     price_history = None
     min_price = None
     max_price = None
+    current_price = None
     product_details = None
     product_image = None 
     supporting_text = None
     predicted_prices = None
-    
 
     if request.method == "POST":
         amazon_link = request.form["amazon_link"]
@@ -132,10 +111,11 @@ def index():
             prices = [entry["y"] for entry in price_history]
             min_price = min(prices)
             max_price = max(prices)
+            current_price = prices[-1]  # latest price
             predicted_prices = predict_future_prices(price_history)
             print(predicted_prices)
 
-    return prepare_and_render(price_history,min_price,max_price,product_details,product_image,supporting_text,predicted_prices)
+    return prepare_and_render(price_history, min_price, max_price, current_price, product_details, product_image, supporting_text, predicted_prices)
 
 if __name__ == "__main__":
     app.run(debug=True)
