@@ -1,243 +1,374 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Price History Tracker</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-      body {
-        font-family: "Arial", sans-serif;
-        background: linear-gradient(135deg, #17153B, #2E236C, #433D8B, #C8ACD6);
-        text-align: center;
-        padding: 50px;
-        color: white;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Price Tracker</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" />
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      background: linear-gradient(to bottom right, #1a153d, #27264f);
+      color: white;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.light-mode {
+      background: #f4f6fa;
+      color: #111;
+    }
 
-      .splash-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #17153B;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-size: 24px;
-        z-index: 9999;
-        animation: fadeOut 2s ease-out forwards;
-        animation-delay: 2s;
-      }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 3rem;
+      border-bottom: 1px solid #555;
+    }
+    body.light-mode header {
+      border-color: #ddd;
+    }
 
-      .splash-title {
-        font-size: 48px;
-        font-weight: bold;
-        color: #C8ACD6;
-      }
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
 
-      .splash-subtitle {
-        font-size: 24px;
-        color: #C8ACD6;
-      }
+    #darkModeToggle {
+      cursor: pointer;
+      background: #48d18a;
+      border: none;
+      border-radius: 20px;
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      color: #111;
+      transition: background 0.3s;
+    }
+    #darkModeToggle:hover {
+      background: #38b77a;
+    }
 
-      @keyframes fadeOut {
-        to {
-          opacity: 0;
-          visibility: hidden;
-        }
-      }
-      h1 {
-        font-size: 52px;
-        font-weight: bold;
-        color: #C8ACD6;
-        margin-bottom: 5px;
-      }
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4rem 6rem;
+      flex-wrap: wrap;
+    }
 
-      h3 {
-        font-size: 26px;
-        color: #C8ACD6;
-        margin-bottom: 20px;
-      }
-      .container {
-        margin: 10px;
-        width: 90%;
-        max-width: 900px;
-        background: #433D8B;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-      }
+    .hero-text {
+      max-width: 600px;
+    }
 
-      .input-container {
-        background: #2E236C;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-        max-width: 500px;
-      }
+    .hero-text h2,
+    .section h2,
+    .section h3 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
 
-      .input-container h2 {
-        color: #C8ACD6;
-        margin-bottom: 15px;
-      }
+    .hero-text p {
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+      color: #dcdcdc;
+    }
+    body.light-mode .hero-text p {
+      color: #555;
+    }
 
-      input[type="text"] {
-        width: 85%;
-        padding: 12px;
-        margin-bottom: 10px;
-        border: 1px solid #C8ACD6;
-        border-radius: 5px;
-        font-size: 16px;
-        outline: none;
-      }
+    .url-form {
+      display: flex;
+      gap: 1rem;
+    }
 
-      button {
-        background: #C8ACD6;
-        color: white;
-        padding: 12px 18px;
-        border: none;
-        border-radius: 5px;
-        font-size: 16px;
-        cursor: pointer;
-        transition: 0.3s;
-      }
+    input[type="text"] {
+      padding: 0.9rem 1rem;
+      border-radius: 30px;
+      border: none;
+      width: 300px;
+      font-size: 1rem;
+    }
 
-      button:hover {
-        background: #a78bbf;
-      }
+    button {
+      padding: 0.9rem 2rem;
+      border-radius: 30px;
+      border: none;
+      background-color: #48d18a;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #38b77a;
+    }
 
-      table {
-        width: 100%;
-        margin-top: 20px;
-        border-collapse: collapse;
-        border-radius: 10px;
-        overflow: hidden;
-        background: #2E236C;
-        color: white;
-      }
+    .hero img {
+      width: 400px;
+      max-width: 100%;
+    }
 
-      th, td {
-        padding: 12px;
-        border: 1px solid #C8ACD6;
-        text-align: center;
-      }
+    .section {
+      padding: 3rem 6rem;
+    }
 
-      th {
-        background: #C8ACD6;
-        color: #17153B;
-        font-weight: bold;
-      }
+    .product-info {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      margin-bottom: 3rem;
+      background-color: #2c2858;
+      padding: 1.5rem;
+      border-radius: 10px;
+      border: 1px solid #444;
+    }
+    body.light-mode .product-info {
+      background-color: #e8eaf6;
+      border-color: #ccc;
+      color: #111;
+    }
 
-      tr:nth-child(even) {
-        background: #433D8B;
-      }
+    .product-info img {
+      width: 180px;
+      height: auto;
+      border-radius: 10px;
+    }
 
-      #chart-container {
-        height: 300px;
-        margin-top: 20px;
-        padding: 20px;
-        background: #2E236C;
-        border-radius: 10px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-      }
-    </style>
-  </head>
-  <body>
-    <div class="splash-screen">
-      <div class="splash-title">TagTrack</div>
-      <div class="splash-subtitle">Prices and Info at a Glance</div>
-    </div>
-    <div class="title-container">
-        <h1>TagTrack</h1>
-        <h3>Prices and Info at a Glance</h3>
-      </div>
-    <div class="input-container">
-      <h2>Enter Product URL</h2>
-      <p>Track the latest price trends and predictions for your product.</p>
-      <form method="POST">
-        <input type="text" name="amazon_link" placeholder="Enter Product Link" required />
-        <button type="submit">Check Price History</button>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #2c2858;
+      color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #444;
+      margin-bottom: 3rem;
+    }
+    body.light-mode table {
+      background-color: #f9f9f9;
+      color: #111;
+      border-color: #ccc;
+    }
+
+    th, td {
+      padding: 1rem;
+      border-bottom: 1px solid #444;
+      text-align: left;
+    }
+    body.light-mode th, body.light-mode td {
+      border-color: #ddd;
+    }
+
+    th {
+      background-color: #3b3a70;
+      font-weight: 700;
+    }
+    body.light-mode th {
+      background-color: #e0e0e0;
+    }
+
+    .insights {
+      margin-top: 2rem;
+      background-color: #2c2858;
+      padding: 2rem;
+      border-radius: 10px;
+      border: 1px solid #444;
+      margin-bottom: 3rem;
+    }
+    body.light-mode .insights {
+      background-color: #e8eaf6;
+      border-color: #ccc;
+      color: #111;
+    }
+
+    .insights p {
+      font-size: 1.1rem;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+
+    .insights span {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #48d18a;
+    }
+
+    #priceChart {
+      margin-top: 2rem;
+      max-width: 100%;
+      margin-bottom: 3rem;
+    }
+
+    #product-section {
+      scroll-margin-top: 100px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Tracker</h1>
+    <button id="darkModeToggle" aria-label="Toggle dark mode">Toggle Dark Mode</button>
+  </header>
+
+  <section class="hero">
+    <div class="hero-text">
+      <h2>Find the best prices,<br> anytime, anywhere.</h2>
+      <p>Track prices in real-time and stay updated on the best deals.</p>
+      <form class="url-form" method="POST" action="/">
+        <input type="text" name="amazon_link" placeholder="Paste the product URL here" required />
+        <button type="submit">Start Tracking</button>
       </form>
+    </div>
+    <img src="{{ url_for('static', filename='illustration.png') }}" alt="Illustration" />
+  </section>
+
+  {% if price_history %}
+  <section id="product-section" class="section">
+    <h2>Product Information</h2>
+    <div class="product-info">
+      <img src="{{ product_image }}" alt="Product Image" />
+      <div>
+        <p><strong>{{ product_details|safe }}</strong></p>
+      </div>
     </div>
 
     {% if supporting_text %}
-    <div class="container">
-      <h2>Why Should You Buy This?</h2>
-      <ul>
-        {% for text in supporting_text %}
-        <li>{{ text }}</li>
-        {% endfor %}
-      </ul>
+    <div class="insights">
+      {% for text in supporting_text %}
+        <p>{{ text }}</p>
+      {% endfor %}
+      <p><strong>Current Price:</strong> <span>₹{{ price_history[-1].y|round(0, 'floor') }}</span></p>
+      <p><strong>Min Price:</strong> <span>₹{{ min_price|round(0, 'floor') }}</span></p>
+      <p><strong>Max Price:</strong> <span>₹{{ max_price|round(0, 'floor') }}</span></p>
     </div>
     {% endif %}
 
-    {% if product_details %}
-    <div class="container">
-      <h2>Product Details</h2>
-      <h4>Current Price: ₹{{ price_history[-1].y }}</h4>
-      <img src="{{ product_image }}" style="max-width: 200px; border-radius: 8px" alt="Product Image" />
-      <div>{{ product_details | safe }}</div>
-    </div>
-    {% endif %}
+    <h3>Price History</h3>
+    <div id="priceChart"></div>
 
     {% if table_html %}
-    <div class="container">
-        <h2>Predicted Prices for Next 30 Days</h2>
-        <table>
-            {{ table_html | safe }}
-        </table>
+    <h3>Forecasted Prices (Next 30 Days)</h3>
+    <div style="overflow-x:auto; max-width: 100%;">
+      {{ table_html|safe }}
     </div>
     {% endif %}
+  </section>
+  {% endif %}
+
+  <script>
+    const body = document.body;
+    const toggleBtn = document.getElementById('darkModeToggle');
+
+    if (localStorage.getItem('theme') === 'light') {
+      body.classList.add('light-mode');
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      body.classList.toggle('light-mode');
+      if (body.classList.contains('light-mode')) {
+        localStorage.setItem('theme', 'light');
+      } else {
+        localStorage.removeItem('theme');
+      }
+      renderChart();
+    });
 
     {% if price_history %}
-    <div class="container">
-      <h2>Price History</h2>
-      <p>Highest Price: ₹{{ max_price }} | Lowest Price: ₹{{ min_price }}</p>
-      <div id="chart-container">
-        <canvas id="priceChart"></canvas>
-      </div>
-    </div>
+    const priceHistory = {{ price_history|tojson }};
+    const minPrice = {{ min_price }};
+    const maxPrice = {{ max_price }};
 
-    <script>
-      const ctx = document.getElementById('priceChart').getContext('2d');
-      const labels = {{ price_history | tojson | safe }}.map(entry => entry.x);
-      const data = {{ price_history | tojson | safe }}.map(entry => entry.y);
-      new Chart(ctx, {
-          type: 'line',
-          data: {
-              labels: labels,
-              datasets: [{
-                  label: 'Price Over Time',
-                  data: data,
-                  borderColor: '#C8ACD6',
-                  backgroundColor: 'rgba(200, 172, 214, 0.2)',
-                  borderWidth: 2,
-                  fill: true
-              }]
+    function renderChart() {
+      if (!priceHistory || priceHistory.length === 0) return;
+
+      if (window.chart) {
+        window.chart.destroy();
+      }
+
+      const isLightMode = body.classList.contains('light-mode');
+
+      const seriesData = priceHistory.map(p => ({
+        x: new Date(p.x),
+        y: p.y,
+      }));
+
+      const options = {
+        chart: {
+          height: 280,
+          type: 'area',
+          toolbar: { show: false },
+          background: 'transparent',
+          foreColor: isLightMode ? '#111' : '#fff',
+        },
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth' },
+        series: [{ name: 'Price', data: seriesData }],
+        xaxis: {
+          type: 'datetime',
+          labels: {
+            style: {
+              colors: isLightMode ? '#111' : '#fff',
+            },
+            formatter: function(value) {
+              const date = new Date(value);
+              return date.toLocaleDateString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric'
+              });
+            }
           },
-          options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                  x: { ticks: { color: '#FFFFFF' }, title: { display: true, text: 'Date & Time', color: '#FFFFFF' } },
-                  y: { ticks: { color: '#FFFFFF' }, title: { display: true, text: 'Price (₹)', color: '#FFFFFF' }, beginAtZero: false }
-              }
+          axisBorder: {
+            show: true,
+            color: isLightMode ? '#ccc' : '#666',
+          },
+        },
+        yaxis: {
+          labels: {
+            style: {
+              colors: isLightMode ? '#111' : '#fff',
+            },
+            formatter: function(val) {
+              return '₹' + val.toFixed(0);
+            },
+          },
+          min: Math.min(...seriesData.map(d => d.y)) * 0.95,
+          max: Math.max(...seriesData.map(d => d.y)) * 1.05,
+        },
+        fill: {
+          type: 'gradient',
+          gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.4,
+            opacityTo: 0.1,
+            stops: [0, 90, 100],
+          },
+          colors: [isLightMode ? '#48d18a' : '#48d18a'],
+        },
+        tooltip: {
+          theme: isLightMode ? 'light' : 'dark',
+          y: {
+            formatter: function(val) {
+              return '₹' + val.toFixed(2);
+            }
           }
-      });
-    </script>
+        }
+      };
+
+      window.chart = new ApexCharts(document.querySelector('#priceChart'), options);
+      window.chart.render();
+    }
+
+    renderChart();
     {% endif %}
-  </body>
+
+    // Smooth scroll to product section on page load
+    window.addEventListener('load', () => {
+      const productSection = document.getElementById('product-section');
+      if (productSection) {
+        productSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  </script>
+</body>
 </html>
